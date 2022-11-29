@@ -33,3 +33,24 @@ dds
 dds <- DESeq(dds)
 vsdata <- vst(dds, blind=FALSE)
 plotPCA(vsdata, intgroup="Group") #DESEQ2 plotPCA
+
+# https://www.bioconductor.org/packages/devel/bioc/vignettes/limma/inst/doc/usersguide.pdf
+dge <- DGEList(counts=countData1)
+
+rownames(dge$samples) == rownames(colData)
+dge$samples$group = colData$Group
+
+# remove rows with zero or very low counts
+keep <- filterByExpr(dge)
+dge <- dge[keep,,keep.lib.sizes=FALSE]
+dge <- calcNormFactors(dge)
+
+# 15.4 Differential expression: limma-trend
+logCPM <- cpm(dge, log=TRUE, prior.count=3)
+
+des = rep(1:3, each = 4)
+
+fit <- lmFit(logCPM, design)
+fit <- eBayes(fit, trend=TRUE)
+topTable(fit, coef=ncol(design)
+
