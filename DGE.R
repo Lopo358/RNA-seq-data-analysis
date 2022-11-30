@@ -52,5 +52,5 @@ des = rep(1:3, each = 4)
 
 fit <- lmFit(logCPM, design)
 fit <- eBayes(fit, trend=TRUE)
-topTable(fit, coef=ncol(design)
+topTable(fit, coef=1:3)
 
