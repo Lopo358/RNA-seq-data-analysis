@@ -1,3 +1,6 @@
+# https://ucdavis-bioinformatics-training.github.io/2018-September-Bioinformatics-Prerequisites/friday/limma_biomart_vignettes.html
+
+
 # Combine all count data files across samples into one data.frame object
 pkg <- c("edgeR", "DESeq2", "ggplot2", "tidyverse")
 BiocManager::install(pkg)
@@ -18,6 +21,16 @@ colnames(countData)
 
 colData <- read.csv(file.path(dir2, "PHENO_DATA.csv"), row.names=1) # PHENO_DATA lists the sample names and the groups they are in (i.e., control, treatment1, treatment2)
 colData
+group = factor(colData$Group, levels = c("control", "treatment1", "treatment2"))
+dge$samples$group = group
+
+design <- model.matrix(~0+group)
+colnames(design) <- gsub("group", "", colnames(design))
+
+
+genes = do.call(rbind, str_split(geneid, pattern = "\\|"))
+genes = as.data.frame(genes)
+colnames(genes) = c("ENTREZID", "SYMBOL")
 
 all(rownames(colData) %in% colnames(countData))
 countData1 <- countData[, rownames(colData)]
@@ -48,9 +61,17 @@ dge <- calcNormFactors(dge)
 # 15.4 Differential expression: limma-trend
 logCPM <- cpm(dge, log=TRUE, prior.count=3)
 
-des = rep(1:3, each = 4)
+contr.matrix <- makeContrasts(
+  ControlvsTreat1 = control - treatment1,
+  ControlvsTreat2 = control - treatment2,
+  Treat1vsTreat2 = Treat1 - Treat2
+  levels = colnames(design))
 
 fit <- lmFit(logCPM, design)
+fit <- contrasts.fit(fit, contrasts=contr.matrix)
 fit <- eBayes(fit, trend=TRUE)
 topTable(fit, coef=1:3)
+
+de <- decideTests(fit)
+vennDiagram(de, circle.col=c("turquoise", "plum4", "lightgreen"), main = "Empirical Bayes stat for DE", cex = c(1,1,1))
 
