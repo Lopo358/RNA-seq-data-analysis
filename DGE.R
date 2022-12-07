@@ -118,8 +118,7 @@ ggplot(dat1, aes(x = log2FoldChange, y = neglog10pval, col = clrs, label = gene_
   geom_hline(yintercept = 2, col = "gray") +
   geom_vline(xintercept = c(-2,2), col = "gray") +
   theme(legend.position = "none") +
-  ggtitle("Control vs Treatment1", 
-          subtitle = ) +
+  ggtitle("Control vs Treatment1") +
   xlab("log2 Fold Change") +
   ylab("-log10(p-value)")
 ggsave(file.path(out, "volcanoplot_eBayes_Control-vs-Treatment1.png"))
