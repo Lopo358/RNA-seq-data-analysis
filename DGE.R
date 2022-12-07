@@ -75,3 +75,52 @@ topTable(fit, coef=1:3)
 de <- decideTests(fit)
 vennDiagram(de, circle.col=c("turquoise", "plum4", "lightgreen"), main = "Empirical Bayes stat for DE", cex = c(1,1,1))
 
+png(file.path(out, "mean_variance_trend_model.png"), width = 1000)
+par(mfrow=c(1,2))
+v <- voom(dge, design, plot=TRUE)
+vfit <- lmFit(v, design)
+vfit <- contrasts.fit(vfit, contrasts=contr.matrix)
+efit <- eBayes(vfit)
+plotSA(efit, main="Final model: Mean-variance trend")
+dev.off()
+
+# gene labels
+geneid = rownames(fit)
+length(geneid) # 
+genes = do.call(rbind, str_split(geneid, pattern = "\\|"))
+dim(genes)
+genes = as.data.frame(genes)
+colnames(genes) = c("ENTREZID", "SYMBOL")
+class(genes)
+table(genes$ENTREZID == genes$SYMBOL)
+genes[genes$ENTREZID == genes$SYMBOL,]$SYMBOL = ""
+genes
+
+# volcano  plot 1
+library(ggrepel)
+
+clrs = rep("black", nrow(efit))
+clrs[abs(fit$coefficients[,1]) > 2 & -log10(fit$p.value[,1]) > 2] = "red"
+
+dat1 = as.data.frame(cbind(genes = genes$SYMBOL, log2FoldChange = fit$coefficients[,1], neglog10pval = -log10(fit$p.value[,1]), clrs = clrs))
+str(dat1)
+dat1$log2FoldChange = as.numeric(dat1$log2FoldChange)
+dat1$neglog10pval = as.numeric(dat1$neglog10pval)
+dat1$gene_labs = ""
+dat1$gene_labs[abs(dat1$log2FoldChange) > 2 & dat1$neglog10pval > 2] = dat1$genes[abs(dat1$log2FoldChange) > 2 & dat1$neglog10pval > 2]
+head(dat1)
+
+ggplot(dat1, aes(x = log2FoldChange, y = neglog10pval, col = clrs, label = gene_labs)) +
+  geom_point() +
+  geom_text_repel(color = "gray30") +
+  scale_color_manual(values=c("gray", "red")) +
+  theme_bw() +
+  geom_hline(yintercept = 2, col = "gray") +
+  geom_vline(xintercept = c(-2,2), col = "gray") +
+  theme(legend.position = "none") +
+  ggtitle("Control vs Treatment1", 
+          subtitle = ) +
+  xlab("log2 Fold Change") +
+  ylab("-log10(p-value)")
+ggsave(file.path(out, "volcanoplot_eBayes_Control-vs-Treatment1.png"))
+
